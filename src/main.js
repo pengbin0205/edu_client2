@@ -21,6 +21,9 @@ import settings from "./settings";
 
 Vue.prototype.$settings = settings;
 
+//导入极验证码
+import "../static/js/gt.js"
+
 
 /* eslint-disable no-new */
 new Vue({

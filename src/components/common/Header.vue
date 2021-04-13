@@ -9,20 +9,39 @@
                     <li v-if="value['is_site']"><a :href="value['link']"><span>{{value['title']}}</span></a></li>
                     <li v-else><router-link :to="value['link']"><span>{{value['title']}}</span></router-link></li>
                 </ul>
-                <div class="login-bar full-right">
-                    <div class="shop-cart full-left">
+
+                <div v-if="token">
+                    <div class="login-bar full-right">
+                        <div class="shop-cart full-left" >
+                            <img src="/static/image/cart.svg" alt="">
+                            <span><router-link to="/cart">购物车</router-link></span>
+                        </div>
+                        <div class="login-box full-left">
+                            <router-link to="/login"><span>{{username}}订单</span></router-link>
+                            &nbsp;|&nbsp;
+                            <span>退出登录</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="token"></div>
+                <div class="login-bar full-right" v-else>
+                    <div class="shop-cart full-left" >
                         <img src="/static/image/cart.svg" alt="">
                         <span><router-link to="/cart">购物车</router-link></span>
                     </div>
                     <div class="login-box full-left">
-                        <span>登录</span>
+                        <router-link to="/login"><span>登陆</span></router-link>
                         &nbsp;|&nbsp;
                         <span>注册</span>
                     </div>
                 </div>
+
+
+                </div>
             </div>
         </div>
-    </div>
+
 </template>
 
 <script>
@@ -31,10 +50,16 @@ export default {
     data() {
         return {
             header_list: [],
+            token: '',
+            username: '',
         }
     },
     created() {
         this.get_header_list();
+        this.token = sessionStorage.token;
+        this.username = sessionStorage.username;
+        console.log(this.username)
+        console.log(this.token)
     },
     methods: {
         get_header_list() {
