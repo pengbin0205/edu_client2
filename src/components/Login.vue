@@ -8,30 +8,55 @@
             </div>
             <div class="login_box">
                 <div class="title">
-                    <span>密码登录</span>
-                    <span>短信登录</span>
+                    <span @click="flag2=0">密码登录</span>
+                    <span @click="flag2=1">短信登录</span>
                 </div>
-                <div class="inp" v-if="">
-                    <input v-model="account"  type="text" placeholder="用户名 / 手机号码 / 邮箱" class="user">
-                    <input v-model="password" type="password" name="" class="pwd" placeholder="密码">
+<!--                <div class="inp" v-if="">-->
+<!--                    <input v-model="account"  type="text" placeholder="用户名 / 手机号码 / 邮箱" class="user">-->
+<!--                    <input v-model="password" type="password" name="" class="pwd" placeholder="密码">-->
+<!--                    <div id="geetest1"></div>-->
+<!--                    <div class="rember">-->
+<!--                        <p>-->
+<!--                            <input type="checkbox" class="no"  v-model="remember"/>-->
+<!--                            <span>记住密码</span>-->
+<!--                        </p>-->
+<!--                        <p>忘记密码</p>-->
+<!--                    </div>-->
+<!--                    <button class="login_btn btn btn-primary" @click="get_captcha">登录</button>-->
+<!--                    <p class="go_login">没有账号-->
+<!--                        <router-link to="/register">立即注册</router-link>-->
+<!--                    </p>-->
+<!--                </div>-->
+<!--                <div class="inp" v-show="">-->
+<!--                    <input type="text" placeholder="手机号码" class="user">-->
+<!--                    <input type="text" class="pwd" placeholder="短信验证码">-->
+<!--                    <button id="get_code" class="btn btn-primary">获取验证码</button>-->
+<!--                    <button class="login_btn" >登录</button>-->
+<!--                    <span class="go_login">没有账号-->
+<!--                        <router-link to="/register">立即注册</router-link>-->
+<!--                    </span>-->
+<!--                </div>-->
+                <div class="inp" v-show="flag2===0">
+                    <input type="text" v-model="username" placeholder="用户名 / 手机号码" class="user" @blur="check_username">
+                    <input type="password"  v-model="password" name="" class="pwd" placeholder="密码" @blur="pwd">
                     <div id="geetest1"></div>
-                    <div class="rember">
+                    <div class="rember" >
                         <p>
-                            <input type="checkbox" class="no"  v-model="remember"/>
+                            <input type="checkbox" class="no" v-model="rember"/>
                             <span>记住密码</span>
                         </p>
-                        <p>忘记密码</p>
+                        <router-link to="/check_pwd"><p>忘记密码</p></router-link>
                     </div>
                     <button class="login_btn btn btn-primary" @click="get_captcha">登录</button>
                     <p class="go_login">没有账号
                         <router-link to="/register">立即注册</router-link>
                     </p>
                 </div>
-                <div class="inp" v-show="">
-                    <input type="text" placeholder="手机号码" class="user">
-                    <input type="text" class="pwd" placeholder="短信验证码">
-                    <button id="get_code" class="btn btn-primary">获取验证码</button>
-                    <button class="login_btn" >登录</button>
+                <div class="inp" v-show="flag2===1">
+                    <input type="text" placeholder="手机号码" class="user" v-model="phone" @blur="check_phone">
+                    <input type="text" class="pwd" placeholder="短信验证码" v-model="code" @blur="check_message">
+                    <button id="get_code" class="btn btn-primary" @click="get_code">{{ code_text }}</button>
+                    <button class="login_btn" @click="user_login2">登录</button>
                     <span class="go_login">没有账号
                         <router-link to="/register">立即注册</router-link>
                     </span>
@@ -46,15 +71,24 @@
         name: "Login",
         data(){
             return{
-                account: "",
-                password: "",
-                remember: false,
+                // account: "",
+                // password: "",
+                // remember: false,
+                username:'',
+                password:'',
+                phone:"",
+                token:'',
+                code:"",
+                rember:false,
+                flag2:0,
+                code_text:"发送验证码",
+                i:60,
             }
         },
         created() {
             //判断是否在local里有
             if(localStorage.username){
-                this.account = localStorage.username;
+                this.username = localStorage.username;
                 this.password = localStorage.password;
                 this.remember = true;
             }
@@ -62,13 +96,145 @@
 
 
         methods: {
+            user_login(){
+                this.$axios({
+                    url:this.$settings.HOST + "user/login/",
+                    method:"post",
+                    data:{
+                        username:this.username,
+                        password:this.password
+                    }
+                }).then(res=>{
+                    console.log(res.data);
+                    let token = res.data.token;
+                    if (token){
+                        this.$message({
+                            message: "登陆成功",
+                            type: "success",
+                            duration: 1000,
+                            showClose: true
+                        })
+
+                        //将用户数据储存起来，方便展示
+                        sessionStorage.username = res.data.username;
+                        sessionStorage.token = res.data.token;
+                        sessionStorage.user_id = res.data.user_id;
+                        // 记住密码
+                        if(this.rember){
+                            localStorage.username = this.username
+                            localStorage.password = this.password
+                        }else {
+                            localStorage.removeItem('username');
+                            localStorage.removeItem('password');
+                        }
+                        // 跳转到首页
+                        this.$router.push("/home");
+                    }
+                }).catch(error=>{
+                    console.log(error);
+                    this.$message.error("用户名或密码错误");
+                })
+            },
+            user_login2(){
+                this.$axios({
+                    url:this.$settings.HOST + "user/login2/",
+                    method:"post",
+                    data:{
+                        phone:this.phone,
+                        sms_code:this.code,
+                    }
+                }).then(res=>{
+                    console.log(res.data);
+                    sessionStorage.username = res.data.username;
+                    sessionStorage.token = res.data.token;
+                    sessionStorage.id = res.data.user_id;
+                    this.$message({
+                        message:"登录成功",
+                        type:"success",
+                        duration:1000,
+                        showClose:true
+                    })
+                    this.$router.push("/home")
+                }).catch(error=>{
+                    console.log(error);
+                    this.$message.error(error.response.data.msg);
+                })
+            },
+            time60s(){
+                this.i = this.i - 1;
+                this.code_text = this.i
+                console.log(this.i)
+                if (this.i === 0) {
+                    this.code_text = '重新发送'
+                    this.i = 60;
+                    return;
+                }
+                clearTimeout(this.timer);  //清除延迟执行 */
+                this.timer = setTimeout(()=>{   //设置延迟执行
+                    this.time60s()
+                },1000);
+            },
+            check_username() {
+                let username = this.name;
+                if (username === null || username === "") {
+                    this.$message.error("用户名不能为空")
+                }
+            },
+            check_phone() {
+                let phone = this.phone;
+                let pattern = /^1[356789]\d{9}$/;
+                if (phone === null || phone === "") {
+                    this.$message.error("手机号不能为空")
+                }else if (pattern.test(phone) === false) {
+                    this.$message.error("手机号格式有误")
+                }
+            },
+            pwd() {
+                let user_pwd = this.password;
+                let pattern = /^.*(?=.{8,16})(?=.*\d)(?=.*[A-Z])(?=.*[a-z]).*$/;
+                if (user_pwd === null || user_pwd === "") {
+                    this.$message.error("密码不能为空")
+                } else if (pattern.test(user_pwd) === false) {
+                    this.$message.error("密码格式有误")
+                }
+            },
+            check_message() {
+                let code = this.code;
+                let pattern = /^\d{6}$/;
+                if (code === null || code === "") {
+                    this.$message.error("验证码不能为空")
+                } else if (pattern.test(code) === false) {
+                    this.$message.error("验证码格式有误")
+                }
+            },
+            get_code(){
+                if(!/1[3-9]\d{9}/.test(this.phone)){
+                    this.$alert("手机号格式有误，请确认","警告");
+                    return false;
+                }
+                this.time60s()
+                this.$axios({
+                    url:this.$settings.HOST + "user/message/",
+                    method:'get',
+                    params:{
+                        phone:this.phone,
+                        flag:0,
+                    }
+                }).then(res=>{
+                    console.log(res.data)
+                    this.$message.success("登录成功")
+                }).catch(error=>{
+                    console.log(error.response)
+                    this.$message.error("登录失败")
+                })
+            },
             // 点击登录按钮  获取验证码
             get_captcha() {
                 this.$axios({
                     url: this.$settings.HOST + "user/captcha/",
                     method: 'get',
                     params: {
-                        account: this.account
+                        username: this.username
                     }
                 }).then(res => {
                     let data = JSON.parse(res.data);
@@ -85,7 +251,7 @@
                     }, this.handlerPopup);
 
                 }).catch(error => {
-                    console.log(error, "11111");
+                    console.log(error);
                 })
             },
 
@@ -119,52 +285,8 @@
                 // 显示验证码
                 captchaObj.appendTo("#geetest1");
             },
-            user_login(){
-                this.$axios({
-                    url: this.$settings.HOST + "user/login/",
-                    method: "POST",
-                    data: {
-                        username : this.account,
-                        password : this.password
-                    }
-                }).then(res=>{
-                    console.log(res.data);
+            },
 
-                    let token = res.data.token;
-                    if (token){
-                        this.$message({
-                            message: "登陆成功",
-                            type: "success",
-                            duration: 1000,
-                            showClose: true
-                        })
-
-                        //将用户数据储存起来，方便展示
-                        sessionStorage.username = res.data.username;
-                        sessionStorage.token = res.data.token;
-                        sessionStorage.user_id = res.data.user_id;
-                        // 记住密码
-                        if(this.remember){
-                            localStorage.username = this.account
-                            localStorage.password = this.password
-                        }else {
-                            localStorage.removeItem('username');
-                            localStorage.removeItem('password');
-                        }
-
-
-
-                        // 跳转到首页
-
-                        this.$router.push("/home");
-                    }
-
-                }).catch(error=>{
-                    console.log(error);
-                    this.$message.error("账号或密码不对")
-                })
-            }
-        }
     }
 </script>
 

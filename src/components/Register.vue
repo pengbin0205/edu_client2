@@ -5,12 +5,12 @@
             <div class="register_box">
                 <div class="register-title">百知教育在线平台注册</div>
                 <div class="inp">
-                    <input v-model="phone" type="text" placeholder="手机号码" class="user" >
-                    <input  v-model="password" type="password" placeholder="登录密码" class="user">
+                    <input v-model="phone" type="text" placeholder="手机号码" class="user" @blur="check_phone" >
+                    <input  v-model="password" type="password" placeholder="登录密码" class="user" @blur="pwd">
                     <div id="geetest"></div>
                     <div class="sms-box">
-                        <input  v-model="code" type="text" maxlength="6" placeholder="输入验证码" class="user">
-                        <div  class="sms-btn" @click="get_code"  :disabled="disabled">{{ code_txt }}}</div>
+                        <input  v-model="code" type="text" maxlength="6" placeholder="输入验证码" class="user" @blur="check_message">
+                        <div  class="sms-btn" @click="get_code" >{{ code_txt }}}</div>
                     </div>
 
                     <button class="register_btn" @click="user_register">注册</button>
@@ -33,64 +33,78 @@ export default {
             password: "",
             is_send_sms: false,// 是否已经发送短信的状态
             sms_text: "点击发送短信", //发送短信的提示
-            time : 60,
+            i: 60,
             code_txt : "获取验证码",
-            disabled: false
             code: "",
 
         }
     },
     methods: {
-        // // 检查手机号 是否符合格式 是否被注册
-        // check_phone(){
-        //     // 像后端发送请求判断当前输入手机号是否已被注册
-        //     //如果注册 则提示被占用
-        //     this.$axios({
-        //
-        //         method: "get",
-        //         data:{
-        //             phone: this.phone,
-        //         }
-        //     }).then(res=>{
-        //         this.$message("手机号已经被注册")
-        //     })
-        // },
-        timer(){
-            if (this.time > 0) {
-                this.disabled = true;
-                this.time--;
-                this.code_txt = this.time + "秒";
-                setTimeout(this.timer, 1000);
+        check_phone() {
+            let phone = this.phone;
+            let pattern = /^1[356789]\d{9}$/;
+            if (phone === null || phone === "") {
+                this.$message.error("手机号不能为空")
+            }else if (pattern.test(phone) === false) {
+                this.$message.error("手机号格式有误")
             }
-            else {
-                this.time = 0;
-                this.code_txt = "发送验证码";
-                this.disabled = false;
+        },
+        pwd() {
+            let user_pwd = this.password;
+            let pattern = /^.*(?=.{8,16})(?=.*\d)(?=.*[A-Z])(?=.*[a-z]).*$/;
+            if (user_pwd === null || user_pwd === "") {
+                this.$message.error("密码不能为空")
+            } else if (pattern.test(user_pwd) === false) {
+                this.$message.error("密码格式有误")
             }
+        },
+        check_message() {
+            let code = this.code;
+            let pattern = /^\d{6}$/;
+            if (code === null || code === "") {
+                this.$message.error("验证码不能为空")
+            } else if (pattern.test(user_pwd) === false) {
+                this.$message.error("验证码格式有误")
+            }
+        },
+        time60s(){
+            this.i = this.i - 1;
+            this.code_txt = this.i
+            console.log(this.i)
+            if (this.i === 0) {
+                this.code_txt = '重新发送'
+                this.i = 60;
+                return;
+            }
+            clearTimeout(this.timer);  //清除延迟执行 */
+            this.timer = setTimeout(()=>{   //设置延迟执行
+                this.time60s()
+            },1000);
         },
         //为用户发送验证码
         get_code(){
             // 验证手机号格式
             if(!/1[3-9]\d{9}/.test(this.phone)){
                 this.$alert("手机号格式有误，请确认","警告");
-                return false
+                return false;
             }
             // 正确的话发送请求 获取验证码
+            this.time60s()
             this.$axios({
                 url: this.$settings.HOST+ "user/message/",
                 method: 'get',
                 params: {
                     phone : this.phone,
-                    // time : this.time,
+                    flag:1,
 
                 }
             }).then(res=>{
                 console.log(res.data)
-                this.$message.success("发送成功注意查看");
-                this.timer()
+                this.$message.success(res.data.msg)
             }).catch(error=>{
-                console.log(error.respond)
-                this.$message.error("短信发送失败或已经发送过短信");
+                console.log(error.response)
+                console.log(error.response.data.msg)
+                this.$message.error(error.response.data.msg)
             })
 
         },
@@ -120,6 +134,7 @@ export default {
 
             }).catch(error=>{
                 console.log(error);
+                this.$message.error("注册失败");
             })
         },
     }

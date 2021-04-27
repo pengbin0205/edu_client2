@@ -3,6 +3,14 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
+import VideoPlayer from 'vue-video-player'
+require('video.js/dist/video-js.css')
+require('vue-video-player/src/custom-theme.css')
+
+
+Vue.use(VideoPlayer);
+
+
 
 import axios from "axios";
 Vue.prototype.$axios = axios;
@@ -21,14 +29,18 @@ import settings from "./settings";
 
 Vue.prototype.$settings = settings;
 
+
+
 //导入极验证码
 import "../static/js/gt.js"
 
+import store from "./store/index"
 
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   router,
+  store,
   components: { App },
   template: '<App/>'
 })

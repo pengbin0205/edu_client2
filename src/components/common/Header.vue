@@ -13,13 +13,13 @@
                 <div v-if="token">
                     <div class="login-bar full-right">
                         <div class="shop-cart full-left" >
-                            <img src="/static/image/cart.svg" alt="">
-                            <span><router-link to="/cart">购物车</router-link></span>
+                            <img src="/static/image/01.png" alt="">
+                            <span><router-link to="/cart"> {{this.$store.state.cart_length}}购物车</router-link></span>
                         </div>
                         <div class="login-box full-left">
-                            <router-link to="/login"><span>{{username}}订单</span></router-link>
+                            <router-link to="/order_list"><span>{{username}}订单</span></router-link>
                             &nbsp;|&nbsp;
-                            <span>退出登录</span>
+                            <span @click="clear_session">退出登录</span>
                         </div>
                     </div>
                 </div>
@@ -28,7 +28,7 @@
                 <div class="login-bar full-right" v-else>
                     <div class="shop-cart full-left" >
                         <img src="/static/image/cart.svg" alt="">
-                        <span><router-link to="/cart">购物车</router-link></span>
+                        <span><router-link to="/cart"> 购物车</router-link></span>
                     </div>
                     <div class="login-box full-left">
                         <router-link to="/login"><span>登陆</span></router-link>
@@ -52,16 +52,22 @@ export default {
             header_list: [],
             token: '',
             username: '',
+            cart_length:0,
         }
     },
     created() {
         this.get_header_list();
+        this.get_cart_length()
         this.token = sessionStorage.token;
         this.username = sessionStorage.username;
         console.log(this.username)
         console.log(this.token)
     },
     methods: {
+        clear_session(){
+            sessionStorage.clear()
+            this.$router.push("/login")
+        },
         get_header_list() {
             this.$axios({
                 url: this.$settings.HOST + 'home/header/',
@@ -71,7 +77,21 @@ export default {
             }).catch(error => {
                 console.log(error);
             })
-        }
+        },
+        get_cart_length(){
+            let token = sessionStorage.token
+            this.$axios.post(this.$settings.HOST + "cart/option2/", {}, {
+                headers: {
+                    "Authorization": "jwt " + token
+                }
+            }).then(res => {
+                this.cart_length = res.data.cart_length;
+                console.log(res.data);
+                this.$store.commit("change_count",this.cart_length)
+            }).catch(error => {
+                console.log(error);
+            })
+        },
     }
 }
 </script>
